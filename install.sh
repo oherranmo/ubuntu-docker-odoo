@@ -49,11 +49,11 @@ if [[ $(which docker) && $(docker --version) ]]; then
 odoo_container_install(){
 db_container=db
 odoo_container=odoo
-if [ -n $(docker container ls | grep $db_container) ];then
+if [[ -n $(docker container ls | grep $db_container) ]];then
 	echo "El nom $db_container ja es troba en ús per un altre contenidor"
 	echo "Generant un nom aleatori"
 else
-if [ -n $(docker container ls | grep $odoo_container) ];then
+if [[ -n $(docker container ls | grep $odoo_container) ]];then
 	echo "El nom $odoo_container ja es troba en ús per un altre contenidor"
 	echo "Generant un nom aleatori"
 fi
