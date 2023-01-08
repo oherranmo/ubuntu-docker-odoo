@@ -29,6 +29,7 @@ main()
 apt update
 apt upgrade -y
 if [[ $(which docker) && $(docker --version) ]]; then
+   echo "S'ha trobat una instal·lació activa del docker"
  	odoo_container_install
   else
     echo "No s'ha trobat una instal·lació activa del docker"
@@ -47,17 +48,78 @@ if [[ $(which docker) && $(docker --version) ]]; then
 }
 
 odoo_container_install(){
-db_container=db
-odoo_container=odoo
-if [[ -n $(docker container ls | grep $db_container) ]];then
-	echo "El nom $db_container ja es troba en ús per un altre contenidor"
-	echo "Generant un nom aleatori"
-else
-if [[ -n $(docker container ls | grep $odoo_container) ]];then
-	echo "El nom $odoo_container ja es troba en ús per un altre contenidor"
-	echo "Generant un nom aleatori"
-fi
-fi
+aleat=$RANDOM
+db_container=db_$aleat
+odoo_container=odoo_$aleat
+do_db=true
+do_odoo=true
+port=8069
+quit=0
+apt install net-tools
+while [ "$quit" -ne 1 ]; do
+  netstat -a | grep $port >> /dev/null
+  if [ $? -gt 0 ]; then
+    quit=1
+  else
+    port=`expr $port + 1`
+  fi
+done
 
+while [ $do_db = true ]; do
+if [ $(docker ps -a -q -f name=$db_container) ]; then
+   echo "El nom $db_container per a el contenidor de la base de dades ja es troba en ús per un altre contenidor"
+	echo "Generant un nom aleatori"
+	db_container=db_$RANDOM
+	echo "S'intenta el següent nom per a la base de dades: $db_container"
+else
+do_db=false
+echo "S'utilitzarà el nom $db_container per a el contenidor de la base de dades"
+docker pull postgres:13
+docker run -d -e POSTGRES_USER=odoo -e POSTGRES_PASSWORD=odoo -e POSTGRES_DB=postgres --name $db_container postgres:13
+fi
+done
+
+while [ $do_odoo = true ]; do
+if [ $(docker ps -a -q -f name=$odoo_container) ]; then
+	echo "El nom $odoo_container per a el contenidor d'odoo ja es troba en ús per un altre contenidor"
+	echo "Generant un nom aleatori"
+	odoo_container=odoo_$RANDOM
+	echo "S'intenta el següent nom per a l'odoo: $odoo_container"
+else
+   do_odoo=false
+	echo "S'utilitzarà el nom $odoo_container per a el contenidor d'odoo"
+	docker pull odoo
+	docker run -d -p $port:$port --name $odoo_container --link $db_container:db -t odoo
+
+fi
+done
+whiptail --title "Comanda root" \
+         --yesno "Voleu crear un alias a l'usuari root, per a iniciar el servei?" 7 70
+         ans=$?
+if [ $ans -eq 0 ]
+then
+if grep -q "odoo-start" /root/.bashrc
+    then
+     sed -i".bak" "/odoo-start/d" /root/.bashrc
+     echo 'alias odoo-start="docker start' $db_container $odoo_container'"' >> /root/.bashrc
+    else
+	echo 'alias odoo-start="docker start' $db_container $odoo_container'"' >> /root/.bashrc
+    fi
+    if grep -q "odoo-stop" /root/.bashrc
+    then
+     sed -i".bak" "/odoo-stop/d" /root/.bashrc
+     echo 'alias odoo-stop="docker stop' $db_container $odoo_container'"' >> /root/.bashrc
+    else
+	echo 'alias odoo-stop="docker stop' $db_container $odoo_container'"' >> /root/.bashrc
+    fi
+    whiptail --title "Dades d'accés" \
+         --msgbox "Ha finalitzat la instal·lació \n\n Us deixem les vostres dades: \n    Iniciar servei: docker start $db_container $odoo_container o bé odoo-start (com a root) \n    Aturar servei: docker stop $db_container $odoo_container o bé odoo-stop (com a root) \n    Port d'accés: $port" 12 80
+
+
+else
+    whiptail --title "Dades d'accés" \
+         --msgbox "Ha finalitzat la instal·lació \n\n Us deixem les vostres dades: \n    Iniciar servei: docker start $db_container $odoo_container \n    Aturar servei: docker stop $db_container $odoo_container \n    Port d'accés: $port" 12 50
+
+fi
 }
 root_check
