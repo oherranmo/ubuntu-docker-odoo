@@ -113,12 +113,12 @@ if grep -q "odoo-start" /root/.bashrc
 	echo 'alias odoo-stop="docker stop' $db_container $odoo_container'"' >> /root/.bashrc
     fi
     whiptail --title "Dades d'accés" \
-         --msgbox "Ha finalitzat la instal·lació \n\n Us deixem les vostres dades: \n    Iniciar servei: docker start $db_container $odoo_container o bé odoo-start (com a root) \n    Aturar servei: docker stop $db_container $odoo_container o bé odoo-stop (com a root) \n    Port d'accés: $port" 12 80
+         --msgbox "Ha finalitzat la instal·lació \n\n Us deixem les vostres dades: \n    Iniciar servei: docker start $db_container $odoo_container o bé odoo-start (com a root) \n    Aturar servei: docker stop $db_container $odoo_container o bé odoo-stop (com a root) \n    Port d'accés: $port" 15 80
 
 
 else
     whiptail --title "Dades d'accés" \
-         --msgbox "Ha finalitzat la instal·lació \n\n Us deixem les vostres dades: \n    Iniciar servei: docker start $db_container $odoo_container \n    Aturar servei: docker stop $db_container $odoo_container \n    Port d'accés: $port" 12 50
+         --msgbox "Ha finalitzat la instal·lació \n\n Us deixem les vostres dades: \n    Iniciar servei: docker start $db_container $odoo_container \n    Aturar servei: docker stop $db_container $odoo_container \n    Port d'accés: $port" 15 50
 
 fi
 }
